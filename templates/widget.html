@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submissions Widget</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+        :root {
+            --background: transparent;
+            --text-primary: #ffffff;
+            --text-secondary: #adb5bd;
+            --accent-color: #5865F2;
+            --card-bg: rgba(15, 16, 20, 0.85);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body, html {
+            font-family: 'Inter', sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            box-sizing: border-box;
+        }
+
+        .widget-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .widget-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: all 0.3s ease;
+        }
+        
+        .widget-card h2 {
+            margin: 0 0 15px 0;
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            font-size: 18px;
+        }
+
+        .info-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .info-item .label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .info-item .value {
+            font-size: 22px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #leaderboard-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #leaderboard-list li {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            font-size: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        #leaderboard-list li:last-child {
+            border-bottom: none;
+        }
+
+        .rank {
+            font-weight: 900;
+            color: var(--accent-color);
+            margin-right: 15px;
+            width: 25px;
+        }
+
+        .username {
+            font-weight: 700;
+        }
+
+        .points {
+            margin-left: auto;
+            color: var(--text-secondary);
+            font-weight: 700;
+        }
+
+        /* --- Notification --- */
+        #notification {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translate(-50%, 200%);
+            background: var(--accent-color);
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 20px;
+            font-weight: 700;
+            box-shadow: 0 10px 40px rgba(88, 101, 242, 0.5);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #notification.show {
+            transform: translate(-50%, 0);
+        }
+
+        #notification img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="widget-container">
+        <!-- Regular Submissions Widget -->
+        <div class="widget-card" id="regular-widget">
+            <h2>🎵 Regular Submissions</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="label">In Queue</div>
+                    <div class="value" id="regular-queue">0</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Now Reviewing</div>
+                    <div class="value" id="regular-reviewing">None</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KOTH Widget -->
+        <div class="widget-card" id="koth-widget">
+            <h2>⚔️ King of the Hill</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="label">Current King</div>
+                    <div class="value" id="koth-king">None</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Challengers</div>
+                    <div class="value" id="koth-queue">0</div>
+                </div>
+            </div>
+            <h3 style="margin-top: 20px; margin-bottom: 10px;">Leaderboard</h3>
+            <ul id="leaderboard-list">
+                <!-- JS will populate this -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- Notification element for new submissions -->
+    <div id="notification"></div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+        const type = params.get('type'); // --- NEW: Get the widget type
+
+        // --- NEW: Logic to hide the unused widget card ---
+        if (type === 'regular') {
+            document.getElementById('koth-widget').style.display = 'none';
+        } else if (type === 'koth') {
+            document.getElementById('regular-widget').style.display = 'none';
+        }
+        // If no type is specified, both will show by default.
+
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}/ws?token=${token}`;
+        
+        let socket;
+
+        function connect() {
+            socket = new WebSocket(wsUrl);
+
+            socket.onopen = function() {
+                console.log("WebSocket connection established.");
+            };
+
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                console.log("Received data:", data);
+
+                if (data.type === 'full_update') {
+                    updateRegularWidget(data.regular_data);
+                    updateKOTHWidget(data.koth_data);
+                } else if (data.type === 'new_submission') {
+                    showNotification(data);
+                }
+            };
+
+            socket.onclose = function(e) {
+                console.log('Socket is closed. Reconnect will be attempted in 5 seconds.', e.reason);
+                setTimeout(function() {
+                    connect();
+                }, 5000);
+            };
+
+            socket.onerror = function(err) {
+                console.error('Socket encountered error: ', err.message, 'Closing socket');
+                socket.close();
+            };
+        }
+
+        function updateRegularWidget(data) {
+            document.getElementById('regular-queue').textContent = data.queue;
+            document.getElementById('regular-reviewing').textContent = data.reviewing || 'None';
+        }
+
+        function updateKOTHWidget(data) {
+            document.getElementById('koth-king').textContent = data.king || 'None';
+            document.getElementById('koth-queue').textContent = data.queue;
+            
+            const leaderboardList = document.getElementById('leaderboard-list');
+            leaderboardList.innerHTML = '';
+
+            if (data.leaderboard && data.leaderboard.length > 0) {
+                data.leaderboard.forEach((user, index) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span class="rank">${index + 1}.</span>
+                        <span class="username">${user.name}</span>
+                        <span class="points">${user.points} pts</span>
+                    `;
+                    leaderboardList.appendChild(li);
+                });
+            } else {
+                 leaderboardList.innerHTML = '<li>No one on the leaderboard yet.</li>';
+            }
+        }
+        
+        function showNotification(data) {
+            const notification = document.getElementById('notification');
+            notification.innerHTML = `<img src="${data.avatar_url}" alt="avatar"> <span><strong>${data.username}</strong> just submitted a track!</span>`;
+
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+
+        if (token) {
+            connect();
+        } else {
+            console.error("No token provided in URL. Widget will not update.");
+            document.body.innerHTML = "<h1>Error: Missing authentication token.</h1>";
+        }
+
+    </script>
+</body>
+</html>

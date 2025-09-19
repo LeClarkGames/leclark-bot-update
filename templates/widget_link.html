@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Widget Links</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1e1f22;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .card {
+            background-color: #2b2d31;
+            padding: 40px;
+            border-radius: 8px;
+            text-align: center;
+            width: 90%;
+            max-width: 700px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        h1 { color: #5865F2; }
+        p { color: #adb5bd; }
+        strong { color: #f8f9fa; }
+        .widget-section {
+            margin-top: 30px;
+            text-align: left;
+        }
+        .widget-section h3 {
+            margin-bottom: 10px;
+            border-bottom: 1px solid #495057;
+            padding-bottom: 5px;
+        }
+        .url-box {
+            display: flex;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px 0 0 5px;
+            border: 1px solid #495057;
+            background-color: #1e1f22;
+            color: #fff;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #5865F2;
+            color: white;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .copy-status {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #28a745;
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Your Stream Widget URLs</h1>
+        <p>Copy the URL for the widget you want to display and add it as a "Browser Source" in OBS or Streamlabs.</p>
+        <p><strong>Do not share these links with anyone!</strong> They are unique to your server.</p>
+        
+        <div class="widget-section">
+            <h3>🎵 Regular Submissions Widget</h3>
+            <div class="url-box">
+                <input type="text" value="{{ widget_url_base }}?type=regular" id="regularUrl" readonly>
+                <button onclick="copyToClipboard('regularUrl', 'regular-status')">Copy</button>
+            </div>
+            <p class="copy-status" id="regular-status">Copied!</p>
+        </div>
+
+        <div class="widget-section">
+            <h3>⚔️ King of the Hill Widget</h3>
+            <div class="url-box">
+                <input type="text" value="{{ widget_url_base }}?type=koth" id="kothUrl" readonly>
+                <button onclick="copyToClipboard('kothUrl', 'koth-status')">Copy</button>
+            </div>
+             <p class="copy-status" id="koth-status">Copied!</p>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard(inputId, statusId) {
+            const urlInput = document.getElementById(inputId);
+            urlInput.select();
+            urlInput.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+
+            const status = document.getElementById(statusId);
+            status.style.visibility = 'visible';
+            setTimeout(() => {
+                status.style.visibility = 'hidden';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
+
